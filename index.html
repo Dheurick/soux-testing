@@ -999,6 +999,12 @@ header>div:last-child{
 .firebase-setup-notice{max-width:650px;margin:12px auto 20px;padding:12px 16px;border:1px solid #8a6c36;background:#352d20;color:#f4d99a;border-radius:10px;font-size:12px}
 #firebaseModeGrid.firebase-disabled{opacity:.45;pointer-events:none}
 
+
+/* V140 — tela integral, sem moldura branca do navegador */
+html, body { margin:0 !important; padding:0 !important; width:100%; min-height:100%; background:#101820 !important; }
+body { overflow-x:hidden; }
+.start-screen { width:100%; min-height:100vh; box-sizing:border-box; margin:0; }
+.start-wrap { box-sizing:border-box; }
 </style>
 </head>
 <body class="theme-dark">
@@ -1730,93 +1736,7 @@ function generateOS(){
 .op-sku-clear{position:absolute;right:34px;top:50%;transform:translateY(-50%);width:26px;height:30px;padding:0;border:0;border-radius:0;background:transparent;color:#e53935;font-size:25px;font-weight:700;line-height:1;cursor:pointer;display:grid;place-items:center;box-shadow:none}
 .op-sku-clear:hover,.op-sku-clear:focus{background:transparent;color:#b71c1c;box-shadow:none;outline:none}
 </style></head><body><div class="head"><h1>SOUX TESTING — ORDEM DE SERVIÇO</h1><div>FOLHA DE APOIO À TESTAGEM • PREENCHIMENTO MANUAL</div></div><div class="meta"><div class="field"><b>Número do Pedido</b>${esc(val("id"))}</div><div class="field"><b>Data</b>${esc(val("date"))}</div><div class="field"><b>Projeto</b>${esc(val("project"))}</div><div class="field"><b>Tipo do Pedido</b>${esc(val("orderType"))}</div><div class="field"><b>Referência</b>${esc(sku)}</div><div class="field"><b>Descrição</b>${esc(desc)}</div><div class="field"><b>Lote</b>${esc(val("lot"))}</div><div class="field"><b>Testador</b>${esc(val("tester"))}</div><div class="field"><b>Separador</b>${esc(val("separator"))}</div><div class="field"><b>Quantidade solicitada / prevista</b>${esc(val("tested"))}</div></div><h2>Controle durante a testagem</h2><table><thead><tr><th>Resultado / ocorrência</th><th>Qtd. registrada</th><th>Contagem manual</th><th>Observação</th></tr></thead><tbody><tr><td>Testados na primeira testagem</td><td>${esc(val("tested"))}</td><td class="write"></td><td class="write"></td></tr>${rows}<tr><td><b>Aprovados para envio</b></td><td class="write"></td><td class="write"></td><td class="write"></td></tr></tbody></table><h2>Observações da testagem / identificação de defeitos</h2><div class="blank"></div><div class="blank"></div><div class="sign"><div>Assinatura do testador</div><div>Conferência / separador</div></div><script>window.onload=()=>window.print()<\/script>
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-auth.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyC_nwaO8NyTGONufJnZKlvTuIO8BMb0iDk",
-  authDomain: "soux-testing.firebaseapp.com",
-  projectId: "soux-testing",
-  storageBucket: "soux-testing.firebasestorage.app",
-  messagingSenderId: "1005975340553",
-  appId: "1:1005975340553:web:d8ff7ae50ecc53b97c5ad8",
-  measurementId: "G-D8P5X6ZXVJ"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const $id = (id) => document.getElementById(id);
-let currentProfile = null;
-
-function setLoginStatus(message, isError=true){
-  const el=$id('firebaseLoginStatus');
-  if(el){el.textContent=message;el.style.color=isError?'#ffb4a9':'#8ee0b2';}
-}
-function showSignedIn(profile, email){
-  currentProfile=profile;
-  $id('firebaseLoginPanel')?.classList.add('hidden');
-  $id('firebaseUserPanel')?.classList.remove('hidden');
-  $id('firebaseSetupNotice')?.classList.remove('hidden');
-  $id('firebaseModeGrid')?.classList.remove('hidden');
-  const role=String(profile.perfil||'').toLowerCase();
-  const label=$id('firebaseUserLabel');
-  if(label) label.textContent=`${profile.nome||email} · ${role.toUpperCase()}`;
-  const ger=$id('firebaseModeGrid');
-  if(ger){
-    const buttons=ger.querySelectorAll('button.mode-card');
-    buttons.forEach((b)=>{b.disabled=!(role==='master'||role==='gerente'||(role==='alimentador'&&b.textContent.includes('Operacional')));});
-    if(role==='alimentador'){
-      buttons.forEach((b)=>{if(!b.textContent.includes('Operacional'))b.classList.add('hidden');});
-    }
-  }
-  const foot=$id('firebaseStartFoot');
-  if(foot) foot.textContent='Sessão autenticada · sincronização do banco em implantação';
-}
-function showSignedOut(){
-  currentProfile=null;
-  $id('firebaseLoginPanel')?.classList.remove('hidden');
-  $id('firebaseUserPanel')?.classList.add('hidden');
-  $id('firebaseSetupNotice')?.classList.add('hidden');
-  $id('firebaseModeGrid')?.classList.add('hidden');
-}
-
-$id('firebaseLoginForm')?.addEventListener('submit', async (event)=>{
-  event.preventDefault();
-  const email=$id('firebaseEmail').value.trim();
-  const password=$id('firebasePassword').value;
-  const button=$id('firebaseLoginButton');
-  button.disabled=true;button.textContent='Validando...';setLoginStatus('',false);
-  try{
-    const credential=await signInWithEmailAndPassword(auth,email,password);
-    const profileSnap=await getDoc(doc(db,'usuarios',credential.user.uid));
-    if(!profileSnap.exists()) throw new Error('Perfil não cadastrado no Firestore. Solicite ao Master a liberação do acesso.');
-    const profile=profileSnap.data();
-    if(profile.ativo!==true) throw new Error('Acesso desativado. Procure um administrador.');
-    if(!['master','gerente','alimentador'].includes(String(profile.perfil||'').toLowerCase())) throw new Error('Perfil de acesso inválido.');
-    showSignedIn(profile,credential.user.email||email);
-  }catch(error){
-    try{if(auth.currentUser) await signOut(auth);}catch(_e){}
-    showSignedOut();
-    setLoginStatus(error.code==='auth/invalid-credential'?'E-mail ou senha incorretos.':(error.message||'Não foi possível autenticar.'));
-  }finally{button.disabled=false;button.textContent='Entrar';}
-});
-
-window.souxFirebaseSignOut=async()=>{await signOut(auth);showSignedOut();};
-onAuthStateChanged(auth,async(user)=>{
-  if(!user){showSignedOut();return;}
-  try{
-    const snap=await getDoc(doc(db,'usuarios',user.uid));
-    if(!snap.exists()||snap.data().ativo!==true){await signOut(auth);showSignedOut();return;}
-    showSignedIn(snap.data(),user.email||'');
-  }catch(error){
-    console.error('Falha ao carregar perfil SOUX:',error);
-    await signOut(auth);showSignedOut();setLoginStatus('Não foi possível validar seu perfil no Firestore.');
-  }
-});
-</script>
 
 </body></html>`;
  const w=window.open("","_blank"); if(!w){alert("Permita pop-ups para gerar a O.S.");return;} w.document.open();w.document.write(html);w.document.close();
@@ -2339,4 +2259,92 @@ render();
 seedDemoOrderPhotos();
 setDefaultDate();
 fillSelects();
-</script></body></html>
+</script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC_nwaO8NyTGONufJnZKlvTuIO8BMb0iDk",
+  authDomain: "soux-testing.firebaseapp.com",
+  projectId: "soux-testing",
+  storageBucket: "soux-testing.firebasestorage.app",
+  messagingSenderId: "1005975340553",
+  appId: "1:1005975340553:web:d8ff7ae50ecc53b97c5ad8",
+  measurementId: "G-D8P5X6ZXVJ"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const $id = (id) => document.getElementById(id);
+let currentProfile = null;
+
+function setLoginStatus(message, isError=true){
+  const el=$id('firebaseLoginStatus');
+  if(el){el.textContent=message;el.style.color=isError?'#ffb4a9':'#8ee0b2';}
+}
+function showSignedIn(profile, email){
+  currentProfile=profile;
+  $id('firebaseLoginPanel')?.classList.add('hidden');
+  $id('firebaseUserPanel')?.classList.remove('hidden');
+  $id('firebaseSetupNotice')?.classList.remove('hidden');
+  $id('firebaseModeGrid')?.classList.remove('hidden');
+  const role=String(profile.perfil||'').toLowerCase();
+  const label=$id('firebaseUserLabel');
+  if(label) label.textContent=`${profile.nome||email} · ${role.toUpperCase()}`;
+  const ger=$id('firebaseModeGrid');
+  if(ger){
+    const buttons=ger.querySelectorAll('button.mode-card');
+    buttons.forEach((b)=>{b.disabled=!(role==='master'||role==='gerente'||(role==='alimentador'&&b.textContent.includes('Operacional')));});
+    if(role==='alimentador'){
+      buttons.forEach((b)=>{if(!b.textContent.includes('Operacional'))b.classList.add('hidden');});
+    }
+  }
+  const foot=$id('firebaseStartFoot');
+  if(foot) foot.textContent='Sessão autenticada · sincronização do banco em implantação';
+}
+function showSignedOut(){
+  currentProfile=null;
+  $id('firebaseLoginPanel')?.classList.remove('hidden');
+  $id('firebaseUserPanel')?.classList.add('hidden');
+  $id('firebaseSetupNotice')?.classList.add('hidden');
+  $id('firebaseModeGrid')?.classList.add('hidden');
+}
+
+$id('firebaseLoginForm')?.addEventListener('submit', async (event)=>{
+  event.preventDefault();
+  const email=$id('firebaseEmail').value.trim();
+  const password=$id('firebasePassword').value;
+  const button=$id('firebaseLoginButton');
+  button.disabled=true;button.textContent='Validando...';setLoginStatus('',false);
+  try{
+    const credential=await signInWithEmailAndPassword(auth,email,password);
+    const profileSnap=await getDoc(doc(db,'usuarios',credential.user.uid));
+    if(!profileSnap.exists()) throw new Error('Perfil não cadastrado no Firestore. Solicite ao Master a liberação do acesso.');
+    const profile=profileSnap.data();
+    if(profile.ativo!==true) throw new Error('Acesso desativado. Procure um administrador.');
+    if(!['master','gerente','alimentador'].includes(String(profile.perfil||'').toLowerCase())) throw new Error('Perfil de acesso inválido.');
+    showSignedIn(profile,credential.user.email||email);
+  }catch(error){
+    try{if(auth.currentUser) await signOut(auth);}catch(_e){}
+    showSignedOut();
+    setLoginStatus(error.code==='auth/invalid-credential'?'E-mail ou senha incorretos.':(error.message||'Não foi possível autenticar.'));
+  }finally{button.disabled=false;button.textContent='Entrar';}
+});
+
+window.souxFirebaseSignOut=async()=>{await signOut(auth);showSignedOut();};
+onAuthStateChanged(auth,async(user)=>{
+  if(!user){showSignedOut();return;}
+  try{
+    const snap=await getDoc(doc(db,'usuarios',user.uid));
+    if(!snap.exists()||snap.data().ativo!==true){await signOut(auth);showSignedOut();return;}
+    showSignedIn(snap.data(),user.email||'');
+  }catch(error){
+    console.error('Falha ao carregar perfil SOUX:',error);
+    await signOut(auth);showSignedOut();setLoginStatus('Não foi possível validar seu perfil no Firestore.');
+  }
+});
+</script>
+</body></html>
