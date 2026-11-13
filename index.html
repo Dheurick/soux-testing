@@ -1259,6 +1259,86 @@ html, body{
 #souxSessionToast .soux-toast-progress span{display:block;height:100%;width:100%;background:#4ade80;transform-origin:left;animation:souxToastLife 5s linear forwards}
 @keyframes souxToastLife{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 @media(prefers-reduced-motion:reduce){#souxSessionToast{transition:none}#souxSessionToast .soux-toast-progress span{animation:souxToastLife 5s linear forwards}}
+
+/* V142.7 — rolagem discreta apenas nas áreas de trabalho; branding SOUX */
+html, body{
+  scrollbar-width:thin;
+  scrollbar-color:#536b7d #111a23;
+}
+body.soux-workspace-active{
+  height:auto !important;
+  min-height:100% !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+}
+body.soux-workspace-active #appShell,
+body.soux-workspace-active #operationalScreen{
+  min-height:100vh;
+  overflow:visible;
+}
+body.soux-workspace-active #appShell .layout{
+  min-height:calc(100vh - 70px);
+  overflow:visible;
+}
+body.soux-workspace-active #appShell main{
+  min-width:0;
+  overflow:visible;
+}
+body.soux-workspace-active #operationalScreen{
+  height:auto !important;
+  max-height:none !important;
+  overflow:visible !important;
+}
+body.soux-workspace-active::-webkit-scrollbar,
+body.soux-workspace-active *::-webkit-scrollbar{
+  width:9px;
+  height:9px;
+}
+body.soux-workspace-active::-webkit-scrollbar-track,
+body.soux-workspace-active *::-webkit-scrollbar-track{
+  background:#111a23;
+  border-radius:10px;
+}
+body.soux-workspace-active::-webkit-scrollbar-thumb,
+body.soux-workspace-active *::-webkit-scrollbar-thumb{
+  background:linear-gradient(180deg,#344b5d,#536b7d 55%,#7255a6);
+  border:2px solid #111a23;
+  border-radius:10px;
+}
+body.soux-workspace-active::-webkit-scrollbar-thumb:hover,
+body.soux-workspace-active *::-webkit-scrollbar-thumb:hover{
+  background:linear-gradient(180deg,#19b9d8,#6c65dc 60%,#b14ee8);
+}
+/* Login e escolha de ambiente continuam sem rolagem. */
+body:not(.soux-workspace-active),
+body:not(.soux-workspace-active) #startScreen{
+  overflow:hidden !important;
+}
+
+
+/* V142.8 — fallback robusto: ativa rolagem pelo ambiente realmente visível */
+html:has(#appShell:not(.hidden)),
+body:has(#appShell:not(.hidden)),
+html:has(#operationalScreen:not(.hidden)),
+body:has(#operationalScreen:not(.hidden)){
+  height:auto !important;
+  min-height:100% !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+}
+body:has(#appShell:not(.hidden)) #appShell,
+body:has(#operationalScreen:not(.hidden)) #operationalScreen{
+  height:auto !important;
+  min-height:100vh !important;
+  max-height:none !important;
+  overflow:visible !important;
+}
+body:has(#appShell:not(.hidden)) #appShell .layout{
+  min-height:calc(100vh - 70px) !important;
+  height:auto !important;
+  overflow:visible !important;
+}
+
 </style>
 </head>
 <body class="theme-dark">
@@ -1629,18 +1709,21 @@ function souxHide(el){
  el.setAttribute("aria-hidden","true");
 }
 function enterGerencial(){
+ document.body.classList.add("soux-workspace-active");
  const start=$("startScreen"),op=$("operationalScreen"),app=$("appShell");
  souxHide(start);souxHide(op);souxShow(app,"block");
  try{render();}catch(error){console.error("Falha ao renderizar o Gerencial:",error);}
  window.scrollTo({top:0,behavior:"instant"});
 }
 function enterOperational(){
+ document.body.classList.add("soux-workspace-active");
  const start=$("startScreen"),app=$("appShell"),op=$("operationalScreen");
  souxHide(start);souxHide(app);souxShow(op,"block");
  try{opGoHome();}catch(error){console.error("Falha ao abrir o Operacional:",error);}
  window.scrollTo({top:0,behavior:"instant"});
 }
 function backToStart(){
+ document.body.classList.remove("soux-workspace-active");
  const start=$("startScreen"),app=$("appShell"),op=$("operationalScreen");
  souxHide(app);souxHide(op);souxShow(start,"flex");
  window.scrollTo({top:0,behavior:"instant"});
